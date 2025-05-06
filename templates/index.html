@@ -6,6 +6,7 @@
     <title>BlindFake - Deepfake Detection</title>
     <!-- Link to the style.css file inside the static folder -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>   
 </head>
 <body>
     <h1>BlindFake - Deepfake Detection</h1>
@@ -16,7 +17,7 @@
     </form>
 
     <div id="result">
-        <p>Processing... Please wait.</p>
+        <!-- Empty initially. Populated dynamically via JavaScript. -->
     </div>
 
     <div id="downloadLinks" style="display: none;">
