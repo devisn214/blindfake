@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlindFake - Deepfake Detection</title>
+    <!-- Link to the style.css file inside the static folder -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>BlindFake - Deepfake Detection</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="fileInput">Upload Video or Image:</label>
+        <input type="file" id="fileInput" name="file" accept="video/*,image/*" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="result">
+        <p>Processing... Please wait.</p>
+    </div>
+
+    <div id="downloadLinks" style="display: none;">
+        <h3>Download Reports</h3>
+        <ul>
+            <li><a href="" id="textReportLink" download>Download Text Report</a></li>
+            <li><a href="" id="brailleReportLink" download>Download Braille Report</a></li>
+            <li><a href="" id="audioReportLink" download>Download Audio MP3</a></li>
+        </ul>
+    </div>
+
+    <!-- Link to the script.js file inside the static folder -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

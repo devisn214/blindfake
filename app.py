@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import cv2
 import os
 import time
@@ -7,7 +7,7 @@ from utils import predict_fakeness, generate_heatmap, save_heatmap, generate_tex
 from braille_converter import convert_to_braille  # Import your Braille function here
 from tensorflow.keras.models import load_model
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend/static')
 
 # Folders
 UPLOAD_FOLDER = 'static'
@@ -23,6 +23,11 @@ os.makedirs(REPORT_FOLDER, exist_ok=True)
 # Load model
 model = load_model('deepfake_detection_model.h5')
 
+@app.route('/')
+def home():
+    # Serve the HTML frontend
+    return render_template('index.html')
+
 @app.route('/detect', methods=['POST'])
 def detect():
     file = request.files['file']
@@ -37,7 +42,7 @@ def detect():
     last_frame_saved = False
     fake_scores = []
 
-    if filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):
+    if filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):  # Video
         cap = cv2.VideoCapture(file_path)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_id = 0
@@ -138,13 +143,18 @@ def detect():
     return jsonify({
         'message': 'Detection Completed',
         'fakeness_probability': float(avg_score),       
-        'text_report_path': text_report_path,
-        'audio_report_path': audio_report_path,
-        'braille_report_path': braille_report_path,
+        'text_report_path': f'/download/{os.path.basename(text_report_path)}',
+        'audio_report_path': f'/download/{os.path.basename(audio_report_path)}',
+        'braille_report_path': f'/download/{os.path.basename(braille_report_path)}',
         'highlight_area': highlight_area.strip(),
         'processing_time_seconds': float(total_time),
         'status': video_status if filename.endswith(('.mp4', '.avi', '.mov', '.mkv')) else image_status  # Add status in response
     })
+
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory(REPORT_FOLDER, filename)
 
 
 if __name__ == '__main__':
