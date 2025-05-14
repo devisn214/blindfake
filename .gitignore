@@ -3,3 +3,5 @@ deepfake-env/
 /static/
 /reports/
 input.txt
+/extracted_frames/
+/deepfake_detection_moel.h5

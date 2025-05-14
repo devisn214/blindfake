@@ -1,71 +1,58 @@
-
 import cv2
-import numpy as np
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.xception import preprocess_input
-from sklearn.model_selection import train_test_split
 import os
+import numpy as np
+from sklearn.model_selection import train_test_split
 
-# 1. Extract frames from a video (skip frames to save memory)
-def extract_frames(video_path, frame_skip=30):
+# 1. Extract and save frames from video
+def extract_and_save_frames(video_path, label, output_dir, frame_skip=30):
     cap = cv2.VideoCapture(video_path)
-    frames = []
     frame_count = 0
+    saved_paths = []
+
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Only take every 'frame_skip'-th frame
         if frame_count % frame_skip == 0:
-            frames.append(frame)
-        
+            frame_filename = f"{video_name}_frame{frame_count}.jpg"
+            full_path = os.path.join(output_dir, frame_filename)
+            cv2.imwrite(full_path, frame)
+            saved_paths.append((full_path, label))
+
         frame_count += 1
 
     cap.release()
-    return frames
+    return saved_paths
 
-# 2. Preprocess the frame to match Xception input size (299x299)
-def preprocess_frame(frame):
-    img = cv2.resize(frame, (299, 299))  # Resize to Xception input size
-    img = image.img_to_array(img)
-    img = np.expand_dims(img, axis=0)
-    img = preprocess_input(img)  # Preprocessing for Xception
-    return img
-
-# 3. Prepare the dataset (50 real and 50 fake videos)
-def prepare_dataset(real_videos, fake_videos, frame_skip=30):
-    images = []
-    labels = []
+# 2. Prepare dataset by extracting frames from all videos and saving to disk
+def prepare_dataset(real_videos, fake_videos, frame_skip=30, output_dir="extracted_frames"):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     print("Processing real videos...")
+    real_data = []
     for idx, video_path in enumerate(real_videos):
-        frames = extract_frames(video_path, frame_skip=frame_skip)
-        for frame in frames:
-            preprocessed_frame = preprocess_frame(frame)
-            images.append(preprocessed_frame)
-            labels.append(0)  # Real video label
-
+        real_data.extend(extract_and_save_frames(video_path, label=0, output_dir=output_dir, frame_skip=frame_skip))
         print(f"Processed {idx + 1}/{len(real_videos)} real videos", end='\r')
 
     print("\nProcessing fake videos...")
+    fake_data = []
     for idx, video_path in enumerate(fake_videos):
-        frames = extract_frames(video_path, frame_skip=frame_skip)
-        for frame in frames:
-            preprocessed_frame = preprocess_frame(frame)
-            images.append(preprocessed_frame)
-            labels.append(1)  # Fake video label
-
+        fake_data.extend(extract_and_save_frames(video_path, label=1, output_dir=output_dir, frame_skip=frame_skip))
         print(f"Processed {idx + 1}/{len(fake_videos)} fake videos", end='\r')
 
-    # Convert to numpy arrays
-    images = np.vstack(images)  # Stack into one big array
+    all_data = real_data + fake_data
+    np.random.shuffle(all_data)
+
+    paths, labels = zip(*all_data)
     labels = np.array(labels)
 
-    # Split dataset
-    X_train, X_temp, y_train, y_temp = train_test_split(images, labels, test_size=0.2, random_state=42)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+    # Split into train, val, test
+    X_train, X_temp, y_train, y_temp = train_test_split(paths, labels, test_size=0.2, stratify=labels, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42)
 
     print("\nDataset preparation complete.")
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return list(X_train), list(X_val), list(X_test), y_train, y_val, y_test

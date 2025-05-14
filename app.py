@@ -108,17 +108,23 @@ def detect():
         # Determine if the image is fake or real
         image_status = "Fake" if avg_score >= 0.5 else "Real"
 
+        # Generate heatmap for image
+        heatmap = generate_heatmap(model, img)
+        heatmap_path = os.path.join(HEATMAP_FOLDER, 'image_heatmap.jpg')
+        save_heatmap(heatmap, img, heatmap_path)
+        highlight_area += f"Image Heatmap saved at: {heatmap_path}\n"
+
         # Build report for image
         summary_text = (
-            f"Analysis Summary:\n\n"
-            f"The uploaded image '{filename}' was analyzed successfully.\n"
-            f"The fakeness probability detected for this image is {score*100:.2f}%. This image is considered '{image_status}'.\n\n"
-        )
+        f"Analysis Summary:\n\n"
+        f"The uploaded image '{filename}' was analyzed successfully.\n"
+        f"The fakeness probability detected for this image is {score*100:.2f}%. This image is considered '{image_status}'.\n\n"
+         )
 
         detection_text = (
-            "Frame-wise Analysis:\n\n"
-            "Since the input is a single image, no frame-wise analysis is available.\n\n"
-        )
+        "Frame-wise Analysis:\n\n"
+        "Since the input is a single image, no frame-wise analysis is available.\n\n"
+         )
 
     end_time = time.time()
     total_time = end_time - start_time
